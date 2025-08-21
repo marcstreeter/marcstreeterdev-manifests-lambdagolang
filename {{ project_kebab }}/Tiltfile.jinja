@@ -1,4 +1,4 @@
-# Tiltfile for resume-lambda-go
+# Tiltfile for {{ project_name }}
 
 # checks
 allow_k8s_contexts('docker-desktop')
@@ -9,9 +9,9 @@ load('ext://dotenv', 'dotenv')
 # environment variables
 DOTENV = dotenv() or {}
 
-# Define the Docker image for the Go Lambda service
+# Define the Docker image for the Lambda service
 docker_build(
-  'resume-lambda-go-lambda',
+  '{{ project_lambda }}',
   '.',
   dockerfile='Dockerfile',
   # live_update=[] # omit for golang it causes tar issues
@@ -19,7 +19,7 @@ docker_build(
 
 # Define the interface service using nginx image
 docker_build(
-  'resume-lambda-go-interface',
+  '{{ project_interface }}',
   '.',
   dockerfile='interface/Dockerfile',
   live_update=[
@@ -38,26 +38,24 @@ k8s_yaml(
           'manifests/values.yaml'
       ],
       set=[
-          'project_name=resume-lambda-go',
+          'project_name={{ project_kebab }}',
           'environment=development'
       ]
   )
 )
-
-# Forward the container port 8080 to the host port 18035
+# Forward the container port {{ lambda_port }} to the host port {{ tilt_lambda_port }}
 k8s_resource(
-    workload='resume-lambda-go-lambda',
+    workload='{{ project_lambda }}',
     port_forwards=[
-        '18035:8080',  # http port
-        # ":5678" # debug port (Go version doesn't use debugpy)
+        '{{ tilt_lambda_port }}:{{ lambda_port }}',  # {{ lambda_port_name }}  port
+        # "{{ tilt_lambda_port_debug }}:{{ lambda_port_debug }}" # {{ lambda_port_debug_name }} port
     ],
 )
-
-# Forward the container port 80 to the host port 18030
+# Forward the container port {{ interface_port }} to the host port {{ tilt_interface_port }}
 k8s_resource(
-  workload='resume-lambda-go-interface',
+  workload='{{ project_interface }}',
   port_forwards=[
-    '18030:80', # http port
+    '{{ tilt_interface_port }}:{{ interface_port }}', # {{ interface_port_name }} port
   ],
-  resource_deps=['resume-lambda-go-lambda']
+  resource_deps=['{{ project_lambda }}']
 )

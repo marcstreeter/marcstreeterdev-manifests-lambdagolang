@@ -1,4 +1,4 @@
-# Justfile for resume-lambda-go project
+# Justfile for {{ project_name }} project
 # Commands for managing AWS infrastructure and Lambda deployment
 set dotenv-load
 
@@ -12,15 +12,15 @@ default:
 
 # Build the Go binary for Lambda
 build:
-    cd src && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o main main.go
+    cd src && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o bootstrap main.go
 
 # Clean build artifacts
 clean:
-    rm -f src/main lambda.zip
+    rm -f src/bootstrap lambda.zip
 
 # Package the Lambda function
 package: build
-    cd src && zip ../lambda.zip main
+    cd src && zip ../lambda.zip bootstrap
 
 # Test the function locally
 test:
@@ -58,22 +58,22 @@ _check-kubectl:
 
 _with-context: _check-kubectl
     #!/usr/bin/env bash
-    if ! kubectl config get-contexts {{context}} &> /dev/null; then
-        echo "Error: context  is not found. Please check your kubeconfig file."
+    if ! kubectl config get-contexts {% raw %}{{context}}{% endraw %} &> /dev/null; then
+        echo "Error: context {% raw %}{{context}}{% endraw %} is not found. Please check your kubeconfig file."
         exit 1
     fi
     
-    if ! kubectl config use-context {{context}}; then
-        echo "Error: Failed to switch to context "
+    if ! kubectl config use-context {% raw %}{{context}}{% endraw %}; then
+        echo "Error: Failed to switch to context {% raw %}{{context}}{% endraw %}"
         exit 1
     fi
     
 _check-namespace: _with-context
     #!/usr/bin/env bash
-    if ! kubectl get namespace {{namespace}} &> /dev/null; then
-        echo "Warning: namespace {{namespace}} does not exist. Creating it..."
-        if ! kubectl create namespace {{namespace}}; then
-            echo "Error: Failed to create namespace {{namespace}}"
+    if ! kubectl get namespace {% raw %}{{namespace}}{% endraw %} &> /dev/null; then
+        echo "Warning: namespace {% raw %}{{namespace}}{% endraw %} does not exist. Creating it..."
+        if ! kubectl create namespace {% raw %}{{namespace}}{% endraw %}; then
+            echo "Error: Failed to create namespace {% raw %}{{namespace}}{% endraw %}"
             exit 1
         fi
     fi
@@ -104,7 +104,7 @@ _check-env:
         fi
     done
     
-    if [ ${#missing_vars[@]} -gt 0 ]; then
+    if [ ${% raw %}{#missing_vars[@]}{% endraw %} -gt 0 ]; then
         echo "❌ Missing required environment variables:"
         for var in "${missing_vars[@]}"; do
             echo "   - $var"
@@ -382,9 +382,9 @@ teardown: _check-gh _check-aws-cli _check-terraform _check-env
             if ! terraform destroy -auto-approve \
                 -var="project_name=$PROJECT_NAME" \
                 -var="aws_region=$AWS_REGION" \
-                -var="lambda_timeout=${LAMBDA_TIMEOUT:-30}" \
-                -var="lambda_memory_size=${LAMBDA_MEMORY_SIZE:-128}" \
-                -var="cloudwatch_log_retention=${CLOUDWATCH_LOG_RETENTION:-7}" \
+                -var="lambda_timeout=${LAMBDA_TIMEOUT:-{{ lambda_timeout }}}" \
+                -var="lambda_memory_size=${LAMBDA_MEMORY_SIZE:-{{ lambda_memory_size }}}" \
+                -var="cloudwatch_log_retention=${CLOUDWATCH_LOG_RETENTION:-{{ cloudwatch_log_retention }}}" \
                 -var="owner=$(gh api user --jq '.login')" \
                 -var="repository=$(gh repo view --json name --jq '.name')"; then
                 echo "❌ Terraform destroy failed"

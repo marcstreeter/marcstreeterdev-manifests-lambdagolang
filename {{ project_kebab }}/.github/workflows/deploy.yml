@@ -62,12 +62,12 @@ jobs:
           CGO_ENABLED: 0
         run: |
           cd src
-          go build -ldflags="-s -w" -o main main.go
+          go build -ldflags="-s -w" -o bootstrap main.go
 
       - name: Package Lambda function
         run: |
           cd src
-          zip lambda.zip main
+          zip lambda.zip bootstrap
           mv lambda.zip ../
 
       - name: Deploy to AWS Lambda

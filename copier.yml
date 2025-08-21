@@ -1,0 +1,217 @@
+# Lambda Python service template configuration
+project_name:
+  type: str
+  help: What is your project name?
+  default: marcstreeterdev lambda
+
+project_slug:
+  type: str
+  help: Slugified project name
+  default: "{{ project_name.lower().replace('-', '_').replace(' ', '_') }}"
+  when: false
+
+project_kebab:
+  type: str
+  help: Kebabified project name
+  default: "{{ project_slug.replace('_', '-')}}"
+  when: false
+
+project_lambda:
+  type: str
+  help: Lambda Service name
+  default: "{{ project_kebab }}-lambda"
+  when: false
+
+project_interface:
+  type: str
+  help: Interface Service name
+  default: "{{ project_kebab }}-interface"
+  when: false
+
+project_type:
+  type: str
+  help: Type of project
+  default: lambda
+  when: false
+
+project_description:
+  type: str
+  help: Short description of the project
+  default: "A {{ project_type }} function for {{ project_name }} by marcstreeterdev"
+
+author_name:
+  type: str
+  help: Author's name
+  default: Marc Streeter
+
+author_email:
+  type: str
+  help: Author's email
+  default: marc@marcstreeter.dev
+
+github_username:
+  type: str
+  help: GitHub username
+  default: marcstreeter
+
+github_repo:
+  type: str
+  help: GitHub repository name
+  default: "/{{ project_kebab }}/"
+
+lambda_timeout:
+  type: int
+  help: Lambda function timeout in seconds (1-900)
+  default: 30
+  validator: >-
+    {%- if lambda_timeout < 1 or lambda_timeout > 900 -%}
+    Lambda timeout must be between 1 and 900 seconds (15 minutes max)
+    {%- endif -%}
+
+lambda_memory_size:
+  type: int
+  help: Lambda function memory size in MB (128-10240)
+  choices:
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 1792
+    - 3008
+    - 4096
+    - 6144
+    - 8192
+    - 10240
+  default: 128
+
+cloudwatch_log_retention:
+  type: int
+  help: CloudWatch log retention in days
+  choices:
+    - 1
+    - 7
+    - 14
+    - 30
+    - 90
+    - 180
+    - 365
+    - 731
+    - 1827
+    - 3653
+  default: 7
+
+aws_region:
+  type: str
+  help: Select AWS region for deployment
+  choices:
+    # USA
+    - "us-east-1" #"US East (N. Virginia)"
+    - "us-east-2" #"US East (Ohio)"
+    - "us-west-1" #"US West (N. California)"
+    - "us-west-2" #"US West (Oregon)"
+    # Canada
+    - "ca-central-1" #"Canada (Central)"
+    - "ca-west-1" #"Canada (Calgary)"
+    # Europe
+    - "eu-central-1" #"Europe (Frankfurt)"
+    - "eu-central-2" #"Europe (Zurich)"
+    - "eu-west-1" #"Europe (Ireland)"
+    - "eu-west-2" #"Europe (London)"
+    - "eu-west-3" #"Europe (Paris)"
+    - "eu-north-1" #"Europe (Stockholm)"
+    - "eu-south-1" #"Europe (Milan)"
+    - "eu-south-2" #"Europe (Spain)"
+    # Asia Pacific
+    - "ap-east-1" #"Asia Pacific (Hong Kong)"
+    - "ap-south-1" #"Asia Pacific (Mumbai)"
+    - "ap-south-2" #"Asia Pacific (Hyderabad)"
+    - "ap-southeast-1" #"Asia Pacific (Singapore)"
+    - "ap-southeast-2" #"Asia Pacific (Sydney)"
+    - "ap-southeast-3" #"Asia Pacific (Jakarta)"
+    - "ap-southeast-4" #"Asia Pacific (Melbourne)"
+    - "ap-northeast-1" #"Asia Pacific (Tokyo)"
+    - "ap-northeast-2" #"Asia Pacific (Seoul)"
+    - "ap-northeast-3" #"Asia Pacific (Osaka)"
+    # Middle East
+    - "me-central-1" #"Middle East (UAE)"
+    - "me-south-1" #"Middle East (Bahrain)"
+    # Africa
+    - "af-south-1" #"Africa (Cape Town)"
+    # South America
+    - "sa-east-1" #"South America (São Paulo)"
+  default: "us-east-1"
+
+interface_port:
+  type: int
+  help: Port for the interface service
+  default: 80
+  when: false
+
+interface_port_name:
+  type: str
+  help: Name for the interface port
+  default: http
+  when: false
+
+tilt_interface_port:
+  type: int
+  help: Port for Tilt to forward the interface to
+  default: 18080
+  validator: >-
+    {%- if tilt_interface_port < 10000 or tilt_interface_port > 20000 -%}
+    Interface port must be between 10000 and 20000
+    {%- endif -%}
+
+lambda_port:
+  type: int
+  help: Port for the lambda service (must be 8080 for AWS Lambda)
+  default: 8080
+  when: false
+
+lambda_port_name:
+  type: str
+  help: Name for the lambda service port
+  default: http
+  when: false
+
+lambda_port_debug:
+  type: int
+  help: Port for the lambda debug service
+  default: 5678
+  when: false
+
+lambda_port_debug_name:
+  type: str
+  help: Name for the lambda debug service port
+  default: debug
+  when: false
+
+tilt_lambda_port:
+  type: int
+  help: Port for Tilt to forward the lambda service to
+  default: "{{ tilt_interface_port + 5 }}"
+  validator: >-
+    {%- if tilt_lambda_port < 10000 or tilt_lambda_port > 20000 -%}
+    Lambda port must be between 10000 and 20000
+    {%- elif tilt_lambda_port == tilt_interface_port -%}
+    Lambda port cannot be the same as interface port ({{ tilt_interface_port }})
+    {%- endif -%}
+
+tilt_lambda_debug_port:
+  type: int
+  help: Port for Tilt to forward the lambda debug service to
+  default: "{{ tilt_interface_port + 9 }}"
+  validator: >-
+    {%- if tilt_lambda_debug_port < 10000 or tilt_lambda_debug_port > 20000 -%}
+    Lambda debug port must be between 10000 and 20000
+    {%- elif tilt_lambda_debug_port == tilt_interface_port -%}
+    Lambda debug port cannot be the same as interface port ({{ tilt_interface_port }})
+    {%- elif tilt_lambda_debug_port == tilt_lambda_port -%}
+    Lambda debug port cannot be the same as lambda port ({{ tilt_lambda_port }})
+    {%- endif -%}
+
+open_source_license:
+  type: str
+  help: License
+  default: MIT
+  when: false

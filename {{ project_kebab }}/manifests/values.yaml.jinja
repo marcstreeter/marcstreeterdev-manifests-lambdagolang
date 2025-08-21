@@ -1,11 +1,11 @@
-# Default values for resume-lambda-go
+# Default values for {{ project_chart }}
 # This is a YAML-formatted file.
 
 # Project configuration
-project_name: "resume-lambda-go"
+project_name: "{{ project_kebab }}"
 environment: "development"
 
-# Go Lambda service
+# General Lambda
 lambda:
   env: []
   # Add environment variables as needed
@@ -13,11 +13,11 @@ lambda:
   #   - name: DEBUG
   #     value: "true"
   selectorLabels:
-    app: ""
-    service: "resume-lambda-go-lambda"
-  name: "resume-lambda-go-lambda"
+    app: "{{ project_kebab }}"
+    service: "{{ project_kebab }}-lambda"
+  name: "{{ project_kebab }}-lambda"
   image:
-    name: "resume-lambda-go-lambda"
+    name: "{{ project_kebab }}-lambda"
     tag: "latest"
     pullPolicy: "IfNotPresent"
   replicas: 1
@@ -29,13 +29,13 @@ lambda:
       cpu: "250m"
       memory: "256Mi"
   serviceType: "ClusterIP"
-  port: 8080
-  portName: http
+  port: {{ lambda_port }}
+  portName: {{ lambda_port_name }}
   protocol: "TCP"
   debug:
     enabled: false
-    port: 5678
-    portName: debug
+    port: {{ lambda_port_debug }}
+    portName: {{ lambda_port_debug_name }}
     protocol: "TCP"
 
 interface:
@@ -44,9 +44,9 @@ interface:
   # env:
   #   - name: DEBUG
   #     value: "true"
-  name: "resume-lambda-go-interface"
+  name: "{{ project_kebab }}-interface"
   image:
-    name: "resume-lambda-go-interface"
+    name: "{{ project_kebab }}-interface"
     tag: "latest"
     pullPolicy: "IfNotPresent"
   replicas: 1
@@ -58,8 +58,8 @@ interface:
       cpu: "250m"
       memory: "256Mi"
   selectorLabels:
-    app: ""
-    service: "resume-lambda-go-interface"
-  port: 80
-  portName: http
+    app: "{{ project_kebab }}"
+    service: "{{ project_kebab }}-interface"
+  port: {{ interface_port }}
+  portName: {{ interface_port_name }}
   protocol: "TCP"

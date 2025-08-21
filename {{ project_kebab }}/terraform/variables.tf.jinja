@@ -11,19 +11,19 @@ variable "aws_region" {
 variable "lambda_timeout" {
   description = "Lambda function timeout in seconds"
   type        = number
-  default     = 30
+  default     = {{ lambda_timeout }}
 }
 
 variable "lambda_memory_size" {
   description = "Lambda function memory size in MB"
   type        = number
-  default     = 128
+  default     = {{ lambda_memory_size }}
 }
 
 variable "cloudwatch_log_retention" {
   description = "CloudWatch log retention in days"
   type        = number
-  default     = 7
+  default     = {{ cloudwatch_log_retention }}
 }
 
 variable "owner" {

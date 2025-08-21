@@ -1,0 +1,16 @@
+apiVersion: v2
+name: {{ project_name | replace(" ", "-") | lower }}
+description: A Helm chart for deploying Lambda services
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - lambda
+  - aws
+  - serverless
+home: https://github.com/{{ github_username }}/{{ github_repo }}
+sources:
+  - https://github.com/{{ github_username }}/{{ github_repo }}
+maintainers:
+  - name: {{ author_name }}
+    email: {{ author_email }} 
