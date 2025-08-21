@@ -1,0 +1,65 @@
+# Default values for resume-lambda-go
+# This is a YAML-formatted file.
+
+# Project configuration
+project_name: "resume-lambda-go"
+environment: "development"
+
+# Go Lambda service
+lambda:
+  env: []
+  # Add environment variables as needed
+  # env:
+  #   - name: DEBUG
+  #     value: "true"
+  selectorLabels:
+    app: ""
+    service: "resume-lambda-go-lambda"
+  name: "resume-lambda-go-lambda"
+  image:
+    name: "resume-lambda-go-lambda"
+    tag: "latest"
+    pullPolicy: "IfNotPresent"
+  replicas: 1
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+  serviceType: "ClusterIP"
+  port: 8080
+  portName: http
+  protocol: "TCP"
+  debug:
+    enabled: false
+    port: 5678
+    portName: debug
+    protocol: "TCP"
+
+interface:
+  env: []
+  # Add environment variables as needed
+  # env:
+  #   - name: DEBUG
+  #     value: "true"
+  name: "resume-lambda-go-interface"
+  image:
+    name: "resume-lambda-go-interface"
+    tag: "latest"
+    pullPolicy: "IfNotPresent"
+  replicas: 1
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+  selectorLabels:
+    app: ""
+    service: "resume-lambda-go-interface"
+  port: 80
+  portName: http
+  protocol: "TCP"
