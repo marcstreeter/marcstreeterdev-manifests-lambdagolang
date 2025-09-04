@@ -20,9 +20,11 @@ spec:
         - name: {{ .Values.interface.portName }}
           containerPort: {{ .Values.interface.port }}
           protocol: {{ .Values.interface.protocol }}
-        {{- if .Values.interface.env }}
         env:
-          {{- toYaml .Values.interface.env | nindent 12 }}
+        - name: API_GATEWAY_URL
+          value: {{ .Values.apiGatewayUrl | quote }}
+        {{- if .Values.interface.env }}
+        {{- toYaml .Values.interface.env | nindent 8 }}
         {{- end }}
         resources:
           {{- toYaml .Values.interface.resources | nindent 12 }}

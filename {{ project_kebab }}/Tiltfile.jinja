@@ -8,6 +8,10 @@ load('ext://dotenv', 'dotenv')
 
 # environment variables
 DOTENV = dotenv() or {}
+API_GATEWAY_URL = str(local(
+  'gh variable get API_GATEWAY_URL 2>/dev/null || echo "https://your-api-gateway.amazonaws.com/prod"',
+  quiet=True,
+)).strip()
 
 # Define the Docker image for the Lambda service
 docker_build(
@@ -39,7 +43,8 @@ k8s_yaml(
       ],
       set=[
           'project_name={{ project_kebab }}',
-          'environment=development'
+          'environment=development',
+          'apiGatewayUrl=' + API_GATEWAY_URL,
       ]
   )
 )

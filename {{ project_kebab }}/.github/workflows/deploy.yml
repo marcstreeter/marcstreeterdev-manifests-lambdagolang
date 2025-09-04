@@ -13,6 +13,7 @@ env:
   GO_VERSION: '1.23'
   AWS_REGION: ${{ vars.AWS_LAMBDA_REGION }}
   FUNCTION_NAME: ${{ vars.AWS_LAMBDA_FUNCTION_NAME }}
+  API_GATEWAY_URL: ${{ vars.API_GATEWAY_URL }}
 
 jobs:
   deploy:
@@ -35,12 +36,13 @@ jobs:
           fi
           
           # Check Lambda configuration
-          if [ -z "${{ vars.AWS_LAMBDA_FUNCTION_NAME }}" ] || [ -z "${{ vars.AWS_LAMBDA_REGION }}" ] || [ -z "${{ vars.AWS_LAMBDA_EXECUTION_ROLE_ARN }}" ]; then
+          if [ -z "${{ vars.AWS_LAMBDA_FUNCTION_NAME }}" ] || [ -z "${{ vars.AWS_LAMBDA_REGION }}" ] || [ -z "${{ vars.AWS_LAMBDA_EXECUTION_ROLE_ARN }}" ] || [ -z "${{ vars.API_GATEWAY_URL }}" ]; then
             echo "❌ Missing Lambda configuration"
             echo "Please configure the following variables:"
             echo "   AWS_LAMBDA_FUNCTION_NAME"
             echo "   AWS_LAMBDA_REGION" 
             echo "   AWS_LAMBDA_EXECUTION_ROLE_ARN"
+            echo "   API_GATEWAY_URL"
             echo "NOTE: Set these variables using the 'just' command from the root of this repository"
             exit 1
           fi
@@ -49,6 +51,7 @@ jobs:
           echo "   Function: ${{ vars.AWS_LAMBDA_FUNCTION_NAME }}"
           echo "   Region: ${{ vars.AWS_LAMBDA_REGION }}"
           echo "   Role: ${{ vars.AWS_LAMBDA_EXECUTION_ROLE_ARN }}"
+          echo "   API Gateway: ${{ vars.API_GATEWAY_URL }}"
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -119,12 +122,18 @@ jobs:
             echo "   - Region: ${{ vars.AWS_LAMBDA_REGION }}"
             echo "   - Role: ${{ vars.AWS_LAMBDA_EXECUTION_ROLE_ARN }}"
             echo ""
-            echo "🔗 AWS Lambda Console URL for [${{ vars.AWS_LAMBDA_FUNCTION_NAME }} Lambda Console](https://${{ vars.AWS_LAMBDA_REGION }}.console.aws.amazon.com/lambda/home?region=${{ vars.AWS_LAMBDA_REGION }}#/functions/${{ vars.AWS_LAMBDA_FUNCTION_NAME }})"
+            echo "## 🔗 Useful Links"
             echo ""
-            echo "📋 Quick Actions:"
+            echo "- [🔧 Lambda Console](https://${{ vars.AWS_LAMBDA_REGION }}.console.aws.amazon.com/lambda/home?region=${{ vars.AWS_LAMBDA_REGION }}#/functions/${{ vars.AWS_LAMBDA_FUNCTION_NAME }})"
+            echo "- [📊 CloudWatch Logs](https://${{ vars.AWS_LAMBDA_REGION }}.console.aws.amazon.com/cloudwatch/home?region=${{ vars.AWS_LAMBDA_REGION }}#logsV2:log-groups/log-group/%252Faws%252Flambda%252F${{ vars.AWS_LAMBDA_FUNCTION_NAME }})"
+            echo "- [🌐 API Gateway Endpoint](${{ vars.API_GATEWAY_URL }})"
+            echo ""
+            echo "## 📋 Quick Actions:"
+            echo ""
             echo "   • View function details and logs"
             echo "   • Test the function"
             echo "   • Monitor metrics and performance"
+            echo "   • Test the production API Gateway with local Interface"
             echo ""
           }  >> $GITHUB_STEP_SUMMARY
 

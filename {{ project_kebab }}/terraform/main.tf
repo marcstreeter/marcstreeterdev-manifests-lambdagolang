@@ -243,6 +243,136 @@ resource "aws_cloudwatch_log_group" "lambda_logs" {
   }
 }
 
+# API Gateway REST API
+resource "aws_api_gateway_rest_api" "main" {
+  name        = "${var.project_name}-api"
+  description = "API Gateway for ${var.project_name} Lambda function"
+  
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+  
+  tags = {
+    Name = "${var.project_name}-api"
+  }
+}
+
+# API Gateway resource (proxy resource to catch all paths)
+resource "aws_api_gateway_resource" "proxy" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_rest_api.main.root_resource_id
+  path_part   = "{proxy+}"
+}
+
+# API Gateway method for OPTIONS (CORS preflight)
+resource "aws_api_gateway_method" "proxy_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.proxy.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+# API Gateway method for ANY (all other HTTP methods)
+resource "aws_api_gateway_method" "proxy" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.proxy.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+# API Gateway integration for Lambda
+resource "aws_api_gateway_integration" "lambda" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_method.proxy.resource_id
+  http_method = aws_api_gateway_method.proxy.http_method
+
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.main.invoke_arn
+}
+
+# API Gateway integration for CORS preflight
+resource "aws_api_gateway_integration" "options_cors" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_method.proxy_options.resource_id
+  http_method = aws_api_gateway_method.proxy_options.http_method
+  type        = "MOCK"
+  
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
+}
+
+# API Gateway method response for OPTIONS
+resource "aws_api_gateway_method_response" "proxy_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.proxy.id
+  http_method = aws_api_gateway_method.proxy_options.http_method
+  status_code = "200"
+  
+  response_models = {
+    "application/json" = "Empty"
+  }
+  
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+# API Gateway integration response for CORS
+resource "aws_api_gateway_integration_response" "options_cors" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.proxy.id
+  http_method = aws_api_gateway_method.proxy_options.http_method
+  status_code = aws_api_gateway_method_response.proxy_options.status_code
+  
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT,DELETE'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# Lambda permission for API Gateway
+resource "aws_lambda_permission" "api_gateway" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.main.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
+}
+
+# API Gateway deployment
+resource "aws_api_gateway_deployment" "main" {
+  depends_on = [
+    aws_api_gateway_method.proxy,
+    aws_api_gateway_integration.lambda,
+    aws_api_gateway_method.proxy_options,
+    aws_api_gateway_integration.options_cors,
+  ]
+
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  stage_name  = "prod"
+  
+  triggers = {
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.proxy.id,
+      aws_api_gateway_method.proxy.id,
+      aws_api_gateway_integration.lambda.id,
+      aws_api_gateway_method.proxy_options.id,
+      aws_api_gateway_integration.options_cors.id,
+    ]))
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 # Output values
 output "lambda_function_name" {
   description = "Name of the Lambda function"
@@ -272,6 +402,12 @@ output "dynamodb_table_name" {
 output "aws_region" {
   description = "AWS region used for resources"
   value       = var.aws_region
+}
+
+# API Gateway URL
+output "api_gateway_url" {
+  description = "URL of the API Gateway endpoint"
+  value       = "${aws_api_gateway_deployment.main.invoke_url}/"
 }
 
 # GitHub Actions credentials

@@ -1,9 +1,12 @@
-# Default values for {{ project_chart }}
+# Default values for {{ project_name }}
 # This is a YAML-formatted file.
 
 # Project configuration
 project_name: "{{ project_kebab }}"
 environment: "development"
+
+# API Gateway configuration
+apiGatewayUrl: "https://your-api-gateway.amazonaws.com/prod"
 
 # General Lambda
 lambda:

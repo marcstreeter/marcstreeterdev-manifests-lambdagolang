@@ -294,6 +294,7 @@ setup: _check-gh _check-aws-cli _check-terraform _check-env
     cd terraform
     ACCESS_KEY_ID=$(terraform output -raw github_actions_access_key_id)
     SECRET_ACCESS_KEY=$(terraform output -raw github_actions_secret_access_key)
+    API_GATEWAY_URL=$(terraform output -raw api_gateway_url)
     cd ..
     if [ -n "$ACCESS_KEY_ID" ] && [ -n "$SECRET_ACCESS_KEY" ]; then \
         gh secret set AWS_ACCESS_KEY_ID --body "$ACCESS_KEY_ID"; \
@@ -307,12 +308,24 @@ setup: _check-gh _check-aws-cli _check-terraform _check-env
         exit 1; \
     fi
     echo ""
-    echo "✅ All required GitHub secrets are now configured:"
+    echo "Step 9: Setting up API Gateway URL variable..."
+    if [ -n "$API_GATEWAY_URL" ]; then \
+        gh variable set API_GATEWAY_URL --body "$API_GATEWAY_URL"; \
+        echo "✅ API Gateway URL variable configured successfully"; \
+        echo "   API Gateway URL: $API_GATEWAY_URL"; \
+    else \
+        echo "❌ Failed to get API Gateway URL/DESCRIPTION from Terraform"; \
+        echo "Please check that the infrastructure was deployed successfully"; \
+        exit 1; \
+    fi
+    echo ""
+    echo "✅ All required GitHub secrets and variables are now configured:"
     echo "   - AWS_ACCESS_KEY_ID (for GitHub Actions)"
     echo "   - AWS_SECRET_ACCESS_KEY (for GitHub Actions)"
     echo "   - AWS_LAMBDA_FUNCTION_NAME"
     echo "   - AWS_LAMBDA_REGION"
     echo "   - AWS_LAMBDA_EXECUTION_ROLE_ARN"
+    echo "   - API_GATEWAY_URL"
     echo ""
     echo "🎉 Project setup complete! Your repository is ready for CI/CD deployment."
     echo "Push your code to trigger the first deployment:"
